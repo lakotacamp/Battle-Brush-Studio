@@ -1,0 +1,1593 @@
+
+//_____________________________________________________________________________________________________________________________________________________________________________________________________
+//Okay so after basically the whole day I have had to redo the on click event and try to recreate the highlight feature because I have somehow...catastrophically ruined the previous code. This code is an unorganized but functional version that has all the functionality from the working color picker return as well as allowing the user to set the color by clicking on the mesh. Once I get it organized I will try to reimplement the highlight on hover feature.
+
+// import React, { Suspense, useState, useRef } from 'react';
+// import { OrbitControls } from "@react-three/drei";
+// import { Canvas } from '@react-three/fiber';
+// import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+// import { useLoader } from '@react-three/fiber';
+// import * as THREE from 'three'; // Import THREE
+
+// const DonkeyCanvas = () => {
+//   const [materialColors, setMaterialColors] = useState({});
+//   const meshRefs = useRef({});
+//   const lastClicked = useRef(null);
+//   const camera = useRef(); // Ref for camera
+
+//   const handleColorChange = (materialName, color) => {
+//     setMaterialColors({ ...materialColors, [materialName]: color });
+//     if (meshRefs.current[materialName]) {
+//       meshRefs.current[materialName].material.color.set(color);
+//     }
+//   };
+
+//   const handleClick = (event) => {
+//     const canvas = event.target; // Access canvas directly
+//     const mouse = {
+//       x: (event.clientX / window.innerWidth) * 2 - 1,
+//       y: -(event.clientY / window.innerHeight) * 2 + 1,
+//     };
+
+//     const raycaster = new THREE.Raycaster();
+//     raycaster.setFromCamera(mouse, camera.current); // Use custom camera
+
+//     const intersects = raycaster.intersectObjects(Object.values(meshRefs.current), true);
+
+//     if (intersects.length > 0) {
+//       const mesh = intersects[0].object;
+//       const meshName = mesh.name;
+//       const materialName = mesh.material.name;
+      
+//       if (lastClicked.current !== meshName) {
+//         console.log('Clicked on mesh:', meshName);
+//         console.log('Material name:', materialName);
+//         lastClicked.current = meshName;
+
+//         // Open corresponding color picker
+//         const colorInput = document.getElementById(materialName);
+//         if (colorInput) {
+//           colorInput.click();
+//         }
+//       }
+//     }
+//   };
+
+//   const gltf = useLoader(GLTFLoader, '/scene.gltf');
+
+//   gltf.scene.traverse((child) => {
+//     if (child.isMesh && child.material.name) {
+//       if (!(child.material.name in materialColors)) {
+//         setMaterialColors((prevColors) => ({
+//           ...prevColors,
+//           [child.material.name]: '#ff0000',
+//         }));
+//       }
+//       meshRefs.current[child.material.name] = child;
+//     }
+//   });
+
+//   return (
+//     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+//       <Canvas
+//         style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+//         onClick={handleClick}
+//         camera={{ position: [0, 0, 5] }}
+//       >
+//         <ambientLight />
+//         <pointLight position={[10, 10, 10]} />
+//         <Suspense fallback={null}>
+//           <Model gltf={gltf.scene} meshRefs={meshRefs} />
+//         </Suspense>
+//         <OrbitControls enablePan={true} enableZoom={true} enableRotate={true} />
+//         <perspectiveCamera ref={camera} position={[0, 0, 5]} />
+//       </Canvas>
+//       <div style={{ position: 'absolute', top: 0, right: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '10px', maxHeight: '600px', overflowY: 'auto' }}>
+//         {Object.entries(materialColors).map(([materialName, color]) => (
+//           <div key={materialName}>
+//             <label htmlFor={materialName}>{materialName}:</label>
+//             <input
+//               id={materialName}
+//               type="color"
+//               value={color}
+//               onChange={(event) => handleColorChange(materialName, event.target.value)}
+//               style={{ display: 'none' }} // Hide color picker
+//             />
+//           </div>
+//         ))}
+//       </div>
+//     </div>
+//   );
+// };
+
+// const Model = ({ gltf, meshRefs }) => {
+//   return (
+//     <group>
+//       <primitive object={gltf} />
+//     </group>
+//   );
+// };
+
+// export default DonkeyCanvas;
+
+//__________________________________________________________________________________________________________________________________________________________________________________________________________
+//This almost worked! Its working except it seems the highlight funtion is messing up and making every color a shade darker than on the color painter. Going to try to fix it but this is PROGRESS!
+
+// import React, { useRef, useState } from 'react';
+// import { Canvas, useThree } from '@react-three/fiber';
+// import { useGLTF } from '@react-three/drei';
+// import * as THREE from 'three';
+// import { OrbitControls } from '@react-three/drei';
+
+// const ShoeCanvas = () => {
+//   return (
+//     <>
+//       <Canvas style={{ position: 'relative' }}>
+//         <ambientLight />
+//         <pointLight position={[10, 10, 10]} />
+//         <OrbitControls />
+//         <Shoe />
+//       </Canvas>
+//       <MaterialColorPickerOverlay />
+//     </>
+//   );
+// };
+
+// const MaterialColorPickerOverlay = () => {
+//   const { scene } = useGLTF('/shoe.gltf');
+//   const [materialColors, setMaterialColors] = useState({});
+//   const meshRefs = useRef({});
+
+//   const handleColorChange = (materialName, color) => {
+//     setMaterialColors({ ...materialColors, [materialName]: color });
+
+//     if (meshRefs.current[materialName]) {
+//       meshRefs.current[materialName].material.color.set(color);
+//     }
+//   };
+
+//   scene.traverse((child) => {
+//     if (child.isMesh && child.material.name) {
+//       if (!(child.material.name in materialColors)) {
+//         setMaterialColors((prevColors) => ({
+//           ...prevColors,
+//           [child.material.name]: '#ff0000',
+//         }));
+//       }
+//       meshRefs.current[child.material.name] = child;
+//     }
+//   });
+
+//   return (
+//     <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
+//       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '10px', maxHeight: '300px', overflowY: 'auto', pointerEvents: 'auto' }}>
+//         {Object.entries(materialColors).map(([materialName, color]) => (
+//           <div key={materialName}>
+//             <label htmlFor={materialName}>{materialName}:</label>
+//             <input
+//               id={materialName}
+//               type="color"
+//               value={color}
+//               onChange={(event) => handleColorChange(materialName, event.target.value)}
+//             />
+//           </div>
+//         ))}
+//       </div>
+//     </div>
+//   );
+// };
+
+// const Shoe = () => {
+//   const { nodes } = useGLTF('/shoe.gltf');
+//   const shoeRef = useRef();
+//   const { camera } = useThree();
+
+//   const handlePointerDown = (event) => {
+//     const raycaster = new THREE.Raycaster();
+//     const mouse = new THREE.Vector2();
+
+//     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+//     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+//     raycaster.setFromCamera(mouse, camera);
+
+//     const intersects = raycaster.intersectObject(shoeRef.current, true);
+//     if (intersects.length > 0) {
+//       const mesh = intersects[0].object;
+//       const materialName = mesh.material.name;
+//       const colorPicker = document.getElementById(materialName);
+//       colorPicker.click(); // Open color picker for the clicked material
+//     }
+//   };
+
+//   const handlePointerOver = (event) => {
+//     const raycaster = new THREE.Raycaster();
+//     const mouse = new THREE.Vector2();
+
+//     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+//     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+//     raycaster.setFromCamera(mouse, camera);
+
+//     const intersects = raycaster.intersectObject(shoeRef.current, true);
+//     if (intersects.length > 0) {
+//       const mesh = intersects[0].object;
+//       const color = mesh.material.color;
+//       const lightenedColor = new THREE.Color().lerpColors(color, new THREE.Color('white'), 0.0001);
+//       mesh.material.emissive.copy(lightenedColor);
+//     }
+//   };
+
+//   const handlePointerOut = () => {
+//     shoeRef.current.traverse((child) => {
+//       if (child.isMesh) {
+//         child.material.emissive.set(0);
+//       }
+//     });
+//   };
+
+//   return (
+//     <group ref={shoeRef}>
+//       {nodes.Shoe.children.map((child, index) => (
+//         <mesh
+//           key={index}
+//           geometry={child.geometry}
+//           material={child.material}
+//           onClick={handlePointerDown}
+//           onPointerOver={handlePointerOver}
+//           onPointerOut={handlePointerOut}
+//         />
+//       ))}
+//     </group>
+//   );
+// };
+
+// export default ShoeCanvas;
+
+//__________________________________________________________________________________________________________________________________________________________________________________________________________
+//Alright so this one incorporates all the functionality of the color painter return version and the on click one. Now have to try to change it so that the on click opens the color painter instead of turning it red. Also the on click elements are a lot more particular about their hover over activating now for some reason...
+
+// import React, { useRef, useState } from 'react';
+// import { Canvas, useThree } from '@react-three/fiber';
+// import { useGLTF } from '@react-three/drei';
+// import * as THREE from 'three';
+// import { SketchPicker } from 'react-color';
+
+// const ShoeCanvas = () => {
+//   return (
+//     <>
+//       <Canvas>
+//         <ambientLight />
+//         <pointLight position={[10, 10, 10]} />
+//         <Shoe />
+//       </Canvas>
+//       <MaterialColorPicker />
+//     </>
+//   );
+// };
+
+// const MaterialColorPicker = () => {
+//   const { scene } = useGLTF('/shoe.gltf');
+//   const [materialColors, setMaterialColors] = useState({});
+//   const meshRefs = useRef({});
+
+//   const handleColorChange = (materialName, color) => {
+//     setMaterialColors({ ...materialColors, [materialName]: color });
+
+//     if (meshRefs.current[materialName]) {
+//       meshRefs.current[materialName].material.color.set(color);
+//     }
+//   };
+
+//   scene.traverse((child) => {
+//     if (child.isMesh && child.material.name) {
+//       if (!(child.material.name in materialColors)) {
+//         setMaterialColors((prevColors) => ({
+//           ...prevColors,
+//           [child.material.name]: '#ff0000',
+//         }));
+//       }
+//       meshRefs.current[child.material.name] = child;
+//     }
+//   });
+
+//   return (
+//     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '10px', maxHeight: '600px', overflowY: 'auto' }}>
+//       {Object.entries(materialColors).map(([materialName, color]) => (
+//         <div key={materialName}>
+//           <label htmlFor={materialName}>{materialName}:</label>
+//           <input
+//             id={materialName}
+//             type="color"
+//             value={color}
+//             onChange={(event) => handleColorChange(materialName, event.target.value)}
+//           />
+//         </div>
+//       ))}
+//     </div>
+//   );
+// };
+
+// const Shoe = () => {
+//   const { nodes } = useGLTF('/shoe.gltf');
+//   const shoeRef = useRef();
+//   const { camera } = useThree();
+
+//   const handlePointerDown = (event) => {
+//     const raycaster = new THREE.Raycaster();
+//     const mouse = new THREE.Vector2();
+
+//     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+//     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+//     raycaster.setFromCamera(mouse, camera);
+
+//     const intersects = raycaster.intersectObject(shoeRef.current, true);
+//     if (intersects.length > 0) {
+//       const mesh = intersects[0].object;
+//       mesh.material.color.set('red');
+//     }
+//   };
+
+//   const handlePointerOver = (event) => {
+//     const raycaster = new THREE.Raycaster();
+//     const mouse = new THREE.Vector2();
+
+//     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+//     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+//     raycaster.setFromCamera(mouse, camera);
+
+//     const intersects = raycaster.intersectObject(shoeRef.current, true);
+//     if (intersects.length > 0) {
+//       const mesh = intersects[0].object;
+//       const color = mesh.material.color;
+//       const lightenedColor = new THREE.Color().lerpColors(color, new THREE.Color('white'), 0.0001);
+//       mesh.material.emissive.copy(lightenedColor);
+//     }
+//   };
+
+//   const handlePointerOut = () => {
+//     shoeRef.current.traverse((child) => {
+//       if (child.isMesh) {
+//         child.material.emissive.set(0);
+//       }
+//     });
+//   };
+
+//   return (
+//     <group ref={shoeRef}>
+//       {nodes.Shoe.children.map((child, index) => (
+//         <mesh
+//           key={index}
+//           geometry={child.geometry}
+//           material={child.material}
+//           onClick={handlePointerDown}
+//           onPointerOver={handlePointerOver}
+//           onPointerOut={handlePointerOut}
+//         />
+//       ))}
+//     </group>
+//   );
+// };
+
+// export default ShoeCanvas;
+
+//__________________________________________________________________________________________________________________________________________________________________________________________________________
+//Ok, now the highlight and color change on click functions are working! Now going to try to add the color painter functionality to it from before
+
+// import React, { useRef } from 'react';
+// import { Canvas, useThree } from '@react-three/fiber';
+// import { useGLTF } from '@react-three/drei';
+// import * as THREE from 'three';
+
+// const ShoeCanvas = () => {
+//   return (
+//     <Canvas>
+//       <ambientLight />
+//       <pointLight position={[10, 10, 10]} />
+//       <Shoe />
+//     </Canvas>
+//   );
+// };
+
+// const Shoe = () => {
+//   const { nodes } = useGLTF('/shoe.gltf');
+//   const shoeRef = useRef();
+//   const { camera } = useThree();
+
+//   const handlePointerDown = (event) => {
+//     const raycaster = new THREE.Raycaster();
+//     const mouse = new THREE.Vector2();
+
+//     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+//     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+//     raycaster.setFromCamera(mouse, camera);
+
+//     const intersects = raycaster.intersectObject(shoeRef.current, true);
+//     if (intersects.length > 0) {
+//       const mesh = intersects[0].object;
+//       mesh.material.color.set('red');
+//     }
+//   };
+
+//   const handlePointerOver = (event) => {
+//     const raycaster = new THREE.Raycaster();
+//     const mouse = new THREE.Vector2();
+
+//     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+//     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+//     raycaster.setFromCamera(mouse, camera);
+
+//     const intersects = raycaster.intersectObject(shoeRef.current, true);
+//     if (intersects.length > 0) {
+//       const mesh = intersects[0].object;
+//       const color = mesh.material.color;
+//       const lightenedColor = new THREE.Color().lerpColors(color, new THREE.Color('white'), 0.0001);
+//       mesh.material.emissive.copy(lightenedColor);
+//     }
+//   };
+
+//   const handlePointerOut = () => {
+//     shoeRef.current.traverse((child) => {
+//       if (child.isMesh) {
+//         child.material.emissive.set(0);
+//       }
+//     });
+//   };
+
+//   return (
+//     <group ref={shoeRef}>
+//       {nodes.Shoe.children.map((child, index) => (
+//         <mesh
+//           key={index}
+//           geometry={child.geometry}
+//           material={child.material}
+//           onClick={handlePointerDown}
+//           onPointerOver={handlePointerOver}
+//           onPointerOut={handlePointerOut}
+//         />
+//       ))}
+//     </group>
+//   );
+// };
+
+// export default ShoeCanvas;
+
+
+//__________________________________________________________________________________________________________________________________________________________________________________________________________
+//Alright, after much testing had to scrap that idea and try a different one. This works. Clicking the color changes it to red, hovering over it highlights it but changes the color to a bright white rather than a brighter red.
+
+// import React, { useRef } from 'react';
+// import { Canvas, useThree } from '@react-three/fiber';
+// import { useGLTF } from '@react-three/drei';
+// import * as THREE from 'three';
+
+// const ShoeCanvas = () => {
+//   return (
+//     <Canvas>
+//       <ambientLight />
+//       <pointLight position={[10, 10, 10]} />
+//       <Shoe />
+//     </Canvas>
+//   );
+// };
+
+// const Shoe = () => {
+//   const { nodes } = useGLTF('/shoe.gltf');
+//   const shoeRef = useRef();
+//   const { camera } = useThree();
+
+//   const handlePointerDown = (event) => {
+//     const raycaster = new THREE.Raycaster();
+//     const mouse = new THREE.Vector2();
+
+//     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+//     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+//     raycaster.setFromCamera(mouse, camera);
+
+//     const intersects = raycaster.intersectObject(shoeRef.current, true);
+//     if (intersects.length > 0) {
+//       const mesh = intersects[0].object;
+//       mesh.material.color.set('red');
+//     }
+//   };
+
+//   const handlePointerOver = (event) => {
+//     const raycaster = new THREE.Raycaster();
+//     const mouse = new THREE.Vector2();
+
+//     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+//     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+//     raycaster.setFromCamera(mouse, camera);
+
+//     const intersects = raycaster.intersectObject(shoeRef.current, true);
+//     if (intersects.length > 0) {
+//       const mesh = intersects[0].object;
+//       mesh.material.emissive.set('white'); // Highlight temporarily
+//     }
+//   };
+
+//   const handlePointerOut = () => {
+//     shoeRef.current.traverse((child) => {
+//       if (child.isMesh) {
+//         child.material.emissive.set(0); // Remove highlight
+//       }
+//     });
+//   };
+
+//   return (
+//     <group ref={shoeRef}>
+//       {nodes.Shoe.children.map((child, index) => (
+//         <mesh
+//           key={index}
+//           geometry={child.geometry}
+//           material={child.material}
+//           onClick={handlePointerDown}
+//           onPointerOver={handlePointerOver}
+//           onPointerOut={handlePointerOut}
+//         />
+//       ))}
+//     </group>
+//   );
+// };
+
+// export default ShoeCanvas;
+
+
+//__________________________________________________________________________________________________________________________________________________________________________________________________________
+//This sort of worked but its a bit buggy. Sometimes the mesh stays blue even when the hover is gone. Sometimes clicking it red and then hovering over it reverts the change from red. Going to try to work the kinks out of it
+
+// import React, { useRef, useState } from 'react';
+// import { Canvas, useThree } from '@react-three/fiber';
+// import { useGLTF } from '@react-three/drei';
+// import * as THREE from 'three';
+
+// const ShoeCanvas = () => {
+//   return (
+//     <Canvas>
+//       <ambientLight />
+//       <pointLight position={[10, 10, 10]} />
+//       <Shoe />
+//     </Canvas>
+//   );
+// };
+
+// const Shoe = () => {
+//   const { nodes } = useGLTF('/shoe.gltf');
+//   const shoeRef = useRef();
+//   const { camera } = useThree();
+//   const [hoveredMesh, setHoveredMesh] = useState(null);
+
+//   const handlePointerDown = (event) => {
+//     const raycaster = new THREE.Raycaster();
+//     const mouse = new THREE.Vector2();
+
+//     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+//     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+//     raycaster.setFromCamera(mouse, camera);
+
+//     const intersects = raycaster.intersectObject(shoeRef.current, true);
+//     if (intersects.length > 0) {
+//       const mesh = intersects[0].object;
+//       mesh.material.color.set('red');
+//     }
+//   };
+
+//   const handlePointerOver = (event) => {
+//     const raycaster = new THREE.Raycaster();
+//     const mouse = new THREE.Vector2();
+
+//     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+//     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+//     raycaster.setFromCamera(mouse, camera);
+
+//     const intersects = raycaster.intersectObject(shoeRef.current, true);
+//     if (intersects.length > 0) {
+//       const mesh = intersects[0].object;
+//       setHoveredMesh(mesh);
+//       mesh.material.color.set('blue');
+//     }
+//   };
+
+//   const handlePointerOut = () => {
+//     if (hoveredMesh) {
+//       hoveredMesh.material.color.set('white');
+//       setHoveredMesh(null);
+//     }
+//   };
+
+//   return (
+//     <group ref={shoeRef}>
+//       {nodes.Shoe.children.map((child, index) => (
+//         <mesh
+//           key={index}
+//           geometry={child.geometry}
+//           material={child.material}
+//           onClick={handlePointerDown}
+//           onPointerOver={handlePointerOver}
+//           onPointerOut={handlePointerOut}
+//         />
+//       ))}
+//     </group>
+//   );
+// };
+
+// export default ShoeCanvas;
+
+
+//__________________________________________________________________________________________________________________________________________________________________________________________________________
+//Alright, tried getting it to highlight the mesh on hover but that didn't work. Tried getting it to change the material color to red on click, that did work, going to try to get it to change the color to red temporarily on hover
+
+// import React, { useRef } from 'react';
+// import { Canvas, useThree } from '@react-three/fiber';
+// import { useGLTF } from '@react-three/drei';
+// import * as THREE from 'three';
+
+// const ShoeCanvas = () => {
+//   return (
+//     <Canvas>
+//       <ambientLight />
+//       <pointLight position={[10, 10, 10]} />
+//       <Shoe />
+//     </Canvas>
+//   );
+// };
+
+// const Shoe = () => {
+//   const { nodes } = useGLTF('/shoe.gltf');
+//   const shoeRef = useRef();
+//   const { camera } = useThree();
+
+//   const handlePointerDown = (event) => {
+//     const raycaster = new THREE.Raycaster();
+//     const mouse = new THREE.Vector2();
+
+//     // Calculate normalized device coordinates from mouse position
+//     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+//     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+//     // Update raycaster with mouse position and camera
+//     raycaster.setFromCamera(mouse, camera);
+
+//     // Perform raycasting and check for intersections
+//     const intersects = raycaster.intersectObject(shoeRef.current, true);
+//     if (intersects.length > 0) {
+//       const mesh = intersects[0].object;
+//       mesh.material.color.set('red');
+//     }
+//   };
+
+//   return (
+//     <group ref={shoeRef}>
+//       {nodes.Shoe.children.map((child, index) => (
+//         <mesh
+//           key={index}
+//           geometry={child.geometry}
+//           material={child.material}
+//           onClick={handlePointerDown}
+//         />
+//       ))}
+//     </group>
+//   );
+// };
+
+// export default ShoeCanvas;
+
+
+//__________________________________________________________________________________________________________________________________________________________________________________________________________
+//Ok now hovering over the mesh with the mouse console logs the name of the mesh and material. Now for the trickiest part, getting it to change the material color on hover
+
+// import React, { useRef } from 'react';
+// import { Canvas, useThree, useFrame } from '@react-three/fiber';
+// import { useGLTF } from '@react-three/drei';
+// import * as THREE from 'three';
+
+// const ShoeCanvas = () => {
+//   return (
+//     <Canvas>
+//       <ambientLight />
+//       <pointLight position={[10, 10, 10]} />
+//       <Shoe />
+//     </Canvas>
+//   );
+// };
+
+// const Shoe = () => {
+//   const { nodes } = useGLTF('/shoe.gltf');
+//   const shoeRef = useRef();
+//   const { camera } = useThree();
+
+//   const handlePointerOver = (event) => {
+//     const raycaster = new THREE.Raycaster();
+//     const mouse = new THREE.Vector2();
+
+//     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+//     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+//     raycaster.setFromCamera(mouse, camera);
+
+//     const intersects = raycaster.intersectObject(shoeRef.current, true);
+//     if (intersects.length > 0) {
+//       const meshName = intersects[0].object.name;
+//       const materialName = intersects[0].object.material.name;
+//       console.log(`Mouse over mesh: ${meshName}, Material: ${materialName}`);
+//     }
+//   };
+
+//   useFrame(() => {
+//     window.addEventListener('pointermove', handlePointerOver);
+
+//     return () => {
+//       window.removeEventListener('pointermove', handlePointerOver);
+//     };
+//   });
+
+//   return <primitive object={nodes.Shoe} ref={shoeRef} />;
+// };
+
+// export default ShoeCanvas;
+
+
+//__________________________________________________________________________________________________________________________________________________________________________________________________________
+//Ok, that worked too. Now the tricky part. I want to see if I can either get it to highlight the mesh on hover over or change the color to red on click
+
+// import React, { useRef } from 'react';
+// import { Canvas, useThree, useFrame } from '@react-three/fiber';
+// import { useGLTF } from '@react-three/drei';
+// import * as THREE from 'three';
+
+// const ShoeCanvas = () => {
+//   return (
+//     <Canvas>
+//       <ambientLight />
+//       <pointLight position={[10, 10, 10]} />
+//       <Shoe />
+//     </Canvas>
+//   );
+// };
+
+// const Shoe = () => {
+//   const { nodes } = useGLTF('/shoe.gltf');
+//   const shoeRef = useRef();
+//   const { camera } = useThree();
+
+//   const handlePointerDown = (event) => {
+//     const raycaster = new THREE.Raycaster();
+//     const mouse = new THREE.Vector2();
+
+//     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+//     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+//     raycaster.setFromCamera(mouse, camera);
+
+//     const intersects = raycaster.intersectObject(shoeRef.current, true);
+//     if (intersects.length > 0) {
+//       const meshName = intersects[0].object.name;
+//       const materialName = intersects[0].object.material.name;
+//       console.log(`Clicked on mesh: ${meshName}, Material: ${materialName}`);
+//     }
+//   };
+
+//   useFrame(() => {
+//     window.addEventListener('pointerdown', handlePointerDown);
+
+//     return () => {
+//       window.removeEventListener('pointerdown', handlePointerDown);
+//     };
+//   });
+
+//   return <primitive object={nodes.Shoe} ref={shoeRef} />;
+// };
+
+// export default ShoeCanvas;
+
+
+//__________________________________________________________________________________________________________________________________________________________________________________________________________
+//Ok, that worked too! Now lets see if it can return the material as well as the mesh name, getting closer
+
+// import React, { useRef } from 'react';
+// import { Canvas, useThree, useFrame } from '@react-three/fiber';
+// import { useGLTF } from '@react-three/drei';
+// import * as THREE from 'three';
+
+// const ShoeCanvas = () => {
+//   return (
+//     <Canvas>
+//       <ambientLight />
+//       <pointLight position={[10, 10, 10]} />
+//       <Shoe />
+//     </Canvas>
+//   );
+// };
+
+// const Shoe = () => {
+//   const { nodes } = useGLTF('/shoe.gltf');
+//   const shoeRef = useRef();
+//   const { camera } = useThree();
+
+//   const handlePointerDown = (event) => {
+//     const raycaster = new THREE.Raycaster();
+//     const mouse = new THREE.Vector2();
+
+//     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+//     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+//     raycaster.setFromCamera(mouse, camera);
+
+//     const intersects = raycaster.intersectObject(shoeRef.current, true);
+//     if (intersects.length > 0) {
+//       const meshName = intersects[0].object.name;
+//       console.log(`Clicked on mesh: ${meshName}`);
+//     }
+//   };
+
+//   useFrame(() => {
+//     window.addEventListener('pointerdown', handlePointerDown);
+
+//     return () => {
+//       window.removeEventListener('pointerdown', handlePointerDown);
+//     };
+//   });
+
+//   return <primitive object={nodes.Shoe} ref={shoeRef} />;
+// };
+
+// export default ShoeCanvas;
+
+
+//__________________________________________________________________________________________________________________________________________________________________________________________________________
+//Alright, that worked now its loading the shoe and console logging an on click event for the shoe only, now to see if I can get differentiation for each mesh
+
+// import React, { useRef } from 'react';
+// import { Canvas, useThree, useFrame } from '@react-three/fiber';
+// import { useGLTF } from '@react-three/drei';
+// import * as THREE from 'three';
+
+// const ShoeCanvas = () => {
+//   return (
+//     <Canvas>
+//       <ambientLight />
+//       <pointLight position={[10, 10, 10]} />
+//       <Shoe />
+//     </Canvas>
+//   );
+// };
+
+// const Shoe = () => {
+//   const { nodes } = useGLTF('/shoe.gltf');
+//   const shoeRef = useRef();
+//   const { camera } = useThree();
+
+//   useFrame(() => {
+//     const handlePointerDown = (event) => {
+//       const raycaster = new THREE.Raycaster();
+//       const mouse = new THREE.Vector2();
+
+//       mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+//       mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+//       raycaster.setFromCamera(mouse, camera);
+
+//       const intersects = raycaster.intersectObject(shoeRef.current, true);
+//       if (intersects.length > 0) {
+//         console.log('Clicked on shoe!');
+//       }
+//     };
+
+//     window.addEventListener('pointerdown', handlePointerDown);
+
+//     return () => {
+//       window.removeEventListener('pointerdown', handlePointerDown);
+//     };
+//   });
+
+//   return <primitive object={nodes.Shoe} ref={shoeRef} />;
+// };
+
+// export default ShoeCanvas;
+
+
+//__________________________________________________________________________________________________________________________________________________________________________________________________________
+//Alright now have to figure out how to add clicking on the object in canvas creates an event, this console logs a click on a simple box, next the shoe
+
+// import React, { useRef } from 'react';
+// import { Canvas, useThree, useFrame } from '@react-three/fiber';
+// import { Box } from '@react-three/drei';
+// import * as THREE from 'three';
+
+// const CubeCanvas = () => {
+//   return (
+//     <Canvas>
+//       <ambientLight />
+//       <pointLight position={[10, 10, 10]} />
+//       <Cube />
+//     </Canvas>
+//   );
+// };
+
+// const Cube = () => {
+//   const cubeRef = useRef();
+//   const { camera } = useThree();
+
+//   useFrame(() => {
+//     const handlePointerDown = (event) => {
+//       const raycaster = new THREE.Raycaster();
+//       const mouse = new THREE.Vector2();
+
+//       mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+//       mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+//       raycaster.setFromCamera(mouse, camera);
+
+//       const intersects = raycaster.intersectObject(cubeRef.current);
+//       if (intersects.length > 0) {
+//         console.log('Clicked on cube!');
+//       }
+//     };
+
+//     window.addEventListener('pointerdown', handlePointerDown);
+
+//     return () => {
+//       window.removeEventListener('pointerdown', handlePointerDown);
+//     };
+//   });
+
+//   return <Box ref={cubeRef} position={[0, 0, 0]} />;
+// };
+
+// export default CubeCanvas;
+
+//__________________________________________________________________________________________________________________________________________________________________________________________________________
+//Better Optimization, far fewer crashes
+
+// import React, { Suspense, useState, useRef } from 'react';
+// import { Stage, OrbitControls } from "@react-three/drei";
+// import { Canvas } from '@react-three/fiber';
+// import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+// import { useLoader } from '@react-three/fiber';
+
+// const Model = () => {
+//   const gltf = useLoader(GLTFLoader, './public/scene.gltf');
+//   const [materialColors, setMaterialColors] = useState({});
+//   const meshRefs = useRef({});
+
+//   const handleColorChange = (materialName, color) => {
+//     setMaterialColors({ ...materialColors, [materialName]: color });
+
+//     if (meshRefs.current[materialName]) {
+//       meshRefs.current[materialName].material.color.set(color);
+//     }
+//   };
+
+//   gltf.scene.traverse((child) => {
+//     if (child.isMesh && child.material.name) {
+//       if (!(child.material.name in materialColors)) {
+//         setMaterialColors((prevColors) => ({
+//           ...prevColors,
+//           [child.material.name]: '#ff0000',
+//         }));
+//       }
+//       meshRefs.current[child.material.name] = child;
+//     }
+//   });
+
+//   return (
+//     <>
+//       <Canvas style={{ width: '600px', height: '600px' }}>
+//       <Stage environment={"city"} intensity={1} contactShadow={false} shadowBias={-0.0015}>
+//         <Suspense fallback={null}>
+//           <primitive object={gltf.scene} />
+//         </Suspense>
+//         </Stage>
+//         <OrbitControls enablePan={true} enableZoom={true} enableRotate={true}/>
+//       </Canvas>
+//       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '10px', maxHeight: '600px', overflowY: 'auto' }}>
+//         {Object.entries(materialColors).map(([materialName, color]) => (
+//           <div key={materialName}>
+//             <label htmlFor={materialName}>{materialName}:</label>
+//             <input
+//               id={materialName}
+//               type="color"
+//               value={color}
+//               onChange={(event) => handleColorChange(materialName, event.target.value)}
+//             />
+//           </div>
+//         ))}
+//       </div>
+//     </>
+//   );
+// };
+
+// export default Model;
+
+
+//__________________________________________________________________________________________________________________________________________________________________________________________________________
+//HOLY SHIT I CANNOT BELIEVE IT BUT THE FREAKING THING WORKED WITH THE SPACE MARINE MODEL ON THE FIRST TRY! THE WHOLE PAGE IS ON THE VERGE OF CRASHING SO WE NEED TO OPTIMIZE THE CODE BUT I CANT BELIEVE IT WORKED!!!
+
+// import React, { Suspense, useState, useRef } from 'react';
+// import { Stage, OrbitControls } from "@react-three/drei";
+// import { Canvas } from '@react-three/fiber';
+// import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+// import { useLoader } from '@react-three/fiber';
+
+// const Model = () => {
+//   const gltf = useLoader(GLTFLoader, './public/scene.gltf');
+//   const [materialColors, setMaterialColors] = useState({});
+//   const meshRefs = useRef({});
+
+//   const handleColorChange = (materialName, color) => {
+//     setMaterialColors({ ...materialColors, [materialName]: color });
+
+//     if (meshRefs.current[materialName]) {
+//       meshRefs.current[materialName].material.color.set(color);
+//     }
+//   };
+
+//   gltf.scene.traverse((child) => {
+//     if (child.isMesh && child.material.name) {
+//       if (!(child.material.name in materialColors)) {
+//         setMaterialColors((prevColors) => ({
+//           ...prevColors,
+//           [child.material.name]: '#ff0000',
+//         }));
+//       }
+//       meshRefs.current[child.material.name] = child;
+//     }
+//   });
+
+//   return (
+//     <>
+//       <Canvas style={{ width: '600px', height: '600px' }}>
+//       <Stage environment={"city"} intensity={1} contactShadow={false} shadowBias={-0.0015}>
+//         <Suspense fallback={null}>
+//           <primitive object={gltf.scene} />
+//         </Suspense>
+//         </Stage>
+//         <OrbitControls enablePan={true} enableZoom={true} enableRotate={true}/>
+//       </Canvas>
+//       {Object.entries(materialColors).map(([materialName, color]) => (
+//         <div key={materialName}>
+//           <label htmlFor={materialName}>{materialName}:</label>
+//           <input
+//             id={materialName}
+//             type="color"
+//             value={color}
+//             onChange={(event) => handleColorChange(materialName, event.target.value)}
+//           />
+//         </div>
+//       ))}
+//     </>
+//   );
+// };
+
+// export default Model;
+// __________________________________________________________________________________________________________________________________________________________________________________________________________
+//OK DONKEY IS NOW OFFICIALLY ALSO CHANGING COLORS, ADDING STAGE EFFECTS TO CANVAS TO PRETTY IT UP, HOPEFULLY THAT DOESN'T BREAK RENDERING AGAIN
+
+// import React, { Suspense, useState, useRef } from 'react';
+// import { Canvas } from '@react-three/fiber';
+// import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+// import { useLoader } from '@react-three/fiber';
+
+// const Model = () => {
+//   const gltf = useLoader(GLTFLoader, './public/Donkey.gltf');
+//   const [materialColors, setMaterialColors] = useState({});
+//   const meshRefs = useRef({});
+
+//   const handleColorChange = (materialName, color) => {
+//     setMaterialColors({ ...materialColors, [materialName]: color });
+
+//     if (meshRefs.current[materialName]) {
+//       meshRefs.current[materialName].material.color.set(color);
+//     }
+//   };
+
+//   gltf.scene.traverse((child) => {
+//     if (child.isMesh && child.material.name) {
+//       if (!(child.material.name in materialColors)) {
+//         setMaterialColors((prevColors) => ({
+//           ...prevColors,
+//           [child.material.name]: '#ff0000', // Initial color is red
+//         }));
+//       }
+//       meshRefs.current[child.material.name] = child;
+//     }
+//   });
+
+//   return (
+//     <>
+//       <Canvas style={{ width: '400px', height: '300px' }}>
+//         <ambientLight />
+//         <pointLight position={[10, 10, 10]} />
+//         <Suspense fallback={null}>
+//           <primitive object={gltf.scene} />
+//         </Suspense>
+//       </Canvas>
+//       {Object.entries(materialColors).map(([materialName, color]) => (
+//         <div key={materialName}>
+//           <label htmlFor={materialName}>{materialName}:</label>
+//           <input
+//             id={materialName}
+//             type="color"
+//             value={color}
+//             onChange={(event) => handleColorChange(materialName, event.target.value)}
+//           />
+//         </div>
+//       ))}
+//     </>
+//   );
+// };
+
+// export default Model;
+
+// __________________________________________________________________________________________________________________________________________________________________________________________________________
+//NOW CAPABLE OF DISPLAYING OTHER GLTF MODELS AND CREATING LABELED COLOR PAINTERS FOR EACH MATERIAL IN THE MODEL, BUT DOES NOT CHANGE THE MODEL COLOR WHEN A NEW COLOR IS SELECTED. SO CLOSE!
+
+// import React, { Suspense, useState } from 'react';
+// import { Canvas } from '@react-three/fiber';
+// import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+// import { useLoader } from '@react-three/fiber';
+
+// const Model = () => {
+//   const gltf = useLoader(GLTFLoader, './public/Donkey.gltf');
+//   const [materialColors, setMaterialColors] = useState({});
+
+//   const handleColorChange = (materialName, color) => {
+//     setMaterialColors({ ...materialColors, [materialName]: color });
+//   };
+
+//   gltf.scene.traverse((child) => {
+//     if (child.isMesh && child.material.name) {
+//       if (!(child.material.name in materialColors)) {
+//         setMaterialColors((prevColors) => ({
+//           ...prevColors,
+//           [child.material.name]: '#ff0000',
+//         }));
+//       }
+//     }
+//   });
+
+//   return (
+//     <>
+//       <Canvas style={{ width: '400px', height: '300px' }}>
+//         <ambientLight />
+//         <pointLight position={[10, 10, 10]} />
+//         <Suspense fallback={null}>
+//           <primitive object={gltf.scene} />
+//         </Suspense>
+//       </Canvas>
+//       {Object.entries(materialColors).map(([materialName, color]) => (
+//         <div key={materialName}>
+//           <label htmlFor={materialName}>{materialName}:</label>
+//           <input
+//             id={materialName}
+//             type="color"
+//             value={color}
+//             onChange={(event) => handleColorChange(materialName, event.target.value)}
+//           />
+//         </div>
+//       ))}
+//     </>
+//   );
+// };
+
+// export default Model;
+
+
+// __________________________________________________________________________________________________________________________________________________________________________________________________________
+//ALL MATERIALS ON SHOE MODEL ARE NOW FULLY COLORABLE! THE RENDERER KEPT LOSING CONTEXT AND THE PAGE KEPT CRASHING BUT THIS PROVES ITS DOABLE, NOW JUST HAVE TO MAKE THE CODE NON-SPECIFIC TO EACH NAME.
+
+// import React, { Suspense, useState } from 'react';
+// import { Canvas } from '@react-three/fiber';
+// import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+// import { useLoader } from '@react-three/fiber';
+
+// const Model = () => {
+//   const [selectedColor, setSelectedColor] = useState('#ff0000');
+//   const [lacesColor, setLacesColor] = useState('#ff0000'); 
+//   const [meshColor, setMeshColor] = useState('#ff0000'); 
+//   const [capsColor, setCapsColor] = useState('#ff0000'); 
+//   const [innerColor, setInnerColor] = useState('#ff0000'); 
+//   const [soleColor, setSoleColor] = useState('#ff0000'); 
+//   const [stripesColor, setStripesColor] = useState('#ff0000'); 
+//   const [bandColor, setBandColor] = useState('#ff0000'); 
+//   const [patchColor, setPatchColor] = useState('#ff0000'); 
+//   const gltf = useLoader(GLTFLoader, './public/shoe.gltf');
+
+//   const handleColorChange = (event) => {
+//     setSelectedColor(event.target.value);
+//   };
+
+//   const handleLacesColorChange = (event) => {
+//     setLacesColor(event.target.value);
+//   };
+
+//   const handleMeshColorChange = (event) => {
+//     setMeshColor(event.target.value);
+//   };
+
+//   const handleCapsColorChange = (event) => {
+//     setCapsColor(event.target.value);
+//   };
+
+//   const handleInnerColorChange = (event) => {
+//     setInnerColor(event.target.value);
+//   };
+
+//   const handleSoleColorChange = (event) => {
+//     setSoleColor(event.target.value);
+//   };
+
+//   const handleStripesColorChange = (event) => {
+//     setStripesColor(event.target.value);
+//   };
+
+//   const handleBandColorChange = (event) => {
+//     setBandColor(event.target.value);
+//   };
+
+//   const handlePatchColorChange = (event) => {
+//     setPatchColor(event.target.value);
+//   };
+
+//   gltf.scene.traverse((child) => {
+//     if (child.isMesh) {
+
+//       if (child.material.name === 'laces') {
+//         child.material.color.set(lacesColor);
+//       } else if (child.material.name === 'mesh') {
+
+//         child.material.color.set(meshColor);
+//       } else if (child.material.name === 'caps') {
+
+//         child.material.color.set(capsColor);
+//       } else if (child.material.name === 'inner') {
+
+//         child.material.color.set(innerColor);
+//       } else if (child.material.name === 'sole') {
+
+//         child.material.color.set(soleColor);
+//       } else if (child.material.name === 'stripes') {
+
+//         child.material.color.set(stripesColor);
+//       } else if (child.material.name === 'band') {
+
+//         child.material.color.set(bandColor);
+//       } else if (child.material.name === 'patch') {
+
+//         child.material.color.set(patchColor);
+//       } else {
+
+//         child.material.color.set(selectedColor);
+//       }
+//     }
+//   });
+
+//   return (
+//     <>
+//       <Canvas style={{ width: '400px', height: '300px' }}>
+//         <ambientLight />
+//         <pointLight position={[10, 10, 10]} />
+//         <Suspense fallback={null}>
+//           <primitive object={gltf.scene} />
+//         </Suspense>
+//       </Canvas>
+
+//       <label htmlFor="selectedColor">Model:</label>
+//       <input id="selectedColor" type="color" value={selectedColor} onChange={handleColorChange} />
+
+//       <label htmlFor="lacesColor">Laces:</label>
+//       <input id="lacesColor" type="color" value={lacesColor} onChange={handleLacesColorChange} />
+
+//       <label htmlFor="meshColor">Mesh:</label>
+//       <input id="meshColor" type="color" value={meshColor} onChange={handleMeshColorChange} />
+
+//       <label htmlFor="capsColor">Caps:</label>
+//       <input id="capsColor" type="color" value={capsColor} onChange={handleCapsColorChange} />
+
+//       <label htmlFor="innerColor">Inner:</label>
+//       <input id="innerColor" type="color" value={innerColor} onChange={handleInnerColorChange} />
+
+//       <label htmlFor="soleColor">Sole:</label>
+//       <input id="soleColor" type="color" value={soleColor} onChange={handleSoleColorChange} />
+
+//       <label htmlFor="stripesColor">Stripes:</label>
+//       <input id="stripesColor" type="color" value={stripesColor} onChange={handleStripesColorChange} />
+
+//       <label htmlFor="bandColor">Band:</label>
+//       <input id="bandColor" type="color" value={bandColor} onChange={handleBandColorChange} />
+
+//       <label htmlFor="patchColor">Patch:</label>
+//       <input id="patchColor" type="color" value={patchColor} onChange={handlePatchColorChange} />
+//     </>
+//   );
+// };
+
+// export default Model;
+
+// __________________________________________________________________________________________________________________________________________________________________________________________________________
+//OK PROOF THAT I CAN CHANGE THE COLOR OF INDIVIDUAL MATERIALS BY NAME. SO CLOSE. HAD TO CHANGE THE SIZE OF THE CANVAS AND CUT THE RENDERING A LOT BECAUSE THE PAGE KEPT LOSING CONTEXT THE GPU KEPT CRASHING ON ME
+
+// import React, { Suspense, useState } from 'react';
+// import { Canvas } from '@react-three/fiber';
+// import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+// import { useLoader } from '@react-three/fiber';
+
+// const Model = () => {
+//   const [selectedColor, setSelectedColor] = useState('#ff0000');
+//   const [lacesColor, setLacesColor] = useState('#ff0000'); // State for laces color
+//   const gltf = useLoader(GLTFLoader, './public/shoe.gltf');
+
+//   const handleColorChange = (event) => {
+//     setSelectedColor(event.target.value);
+//   };
+
+//   const handleLacesColorChange = (event) => {
+//     setLacesColor(event.target.value);
+//   };
+
+//   gltf.scene.traverse((child) => {
+//     if (child.isMesh) {
+
+//       if (child.material.name === 'laces') {
+//         child.material.color.set(lacesColor);
+//       } else {
+
+//         child.material.color.set(selectedColor);
+//       }
+//     }
+//   });
+
+//   return (
+//     <>
+//       <Canvas style={{ width: '400px', height: '300px' }}>
+//         <ambientLight />
+//         <pointLight position={[10, 10, 10]} />
+
+//         <Suspense fallback={null}>
+//           <primitive object={gltf.scene} />
+//         </Suspense>
+//       </Canvas>
+
+//       <input type="color" value={selectedColor} onChange={handleColorChange} />
+
+//       <input type="color" value={lacesColor} onChange={handleLacesColorChange} />
+//     </>
+//   );
+// };
+
+// export default Model;
+
+// __________________________________________________________________________________________________________________________________________________________________________________________________________
+// GOD MATHA FUCKIN DAMN I GOT THE COLOR CHANGING ON THIS ONE SO CLOSE NOW IM SO HAPPY I COULD SCREAM
+
+// import React, { Suspense, useState } from 'react';
+// import { Canvas } from '@react-three/fiber';
+// import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+// import { useLoader } from '@react-three/fiber';
+
+// const Model = () => {
+//   const [selectedColor, setSelectedColor] = useState('#ff0000');
+//   const gltf = useLoader(GLTFLoader, './public/shoe.gltf');
+
+
+//   const handleColorChange = (event) => {
+//     setSelectedColor(event.target.value);
+//   };
+
+
+//   gltf.scene.traverse((child) => {
+//     if (child.isMesh) {
+//       child.material.color.set(selectedColor);
+//     }
+//   });
+
+//   return (
+//     <>
+//     <Canvas>
+//       <ambientLight />
+//       <pointLight position={[10, 10, 10]} />
+//       {/* Color picker */}
+//       <Suspense fallback={null}>
+//         <primitive object={gltf.scene} />
+//       </Suspense>
+//     </Canvas>
+//       <input type="color" value={selectedColor} onChange={handleColorChange} />
+//       </>
+//   );
+// };
+
+// export default Model;
+
+// __________________________________________________________________________________________________________________________________________________________________________________________________________
+// THIS ONE WAS ACTUALLY ABLE TO CHANGE THE COLOR OF ALL MATERIALS TO RED AND PRESENT IT ON THE CANVAS
+
+// import React, { Suspense } from 'react';
+// import { Canvas } from '@react-three/fiber';
+// import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+// import { useLoader } from '@react-three/fiber';
+
+// const Model = () => {
+//   const gltf = useLoader(GLTFLoader, './public/shoe.gltf');
+
+//   // Traverse through the scene to change material color to red
+//   gltf.scene.traverse((child) => {
+//     if (child.isMesh) {
+//       child.material.color.set('red');
+//     }
+//   });
+
+//   return (
+//     <Canvas>
+//       <ambientLight />
+//       <pointLight position={[10, 10, 10]} />
+//       <Suspense fallback={null}>
+//         <primitive object={gltf.scene} />
+//       </Suspense>
+//     </Canvas>
+//   );
+// };
+
+// export default Model;
+
+// __________________________________________________________________________________________________________________________________________________________________________________________________________
+// THIS IS THE VERSION WHERE IT IS RETURNING ALL MATERIAL NAMES BUT NOT ABLE TO CHANGE THE COLOR ON CLICK
+
+// import React, { useEffect, useState } from 'react';
+// import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+// import { Canvas, useThree } from '@react-three/fiber';
+// import { Fog, Color } from 'three';
+// import Experience from "./components/Experience";
+
+// const GLTFObjectNames = () => {
+//   const [materialColors, setMaterialColors] = useState({});
+//   const [loading, setLoading] = useState(true);
+
+//   useEffect(() => {
+//     const gltfUrl = './public/shoe.gltf'; // Specify the file path here
+//     const loader = new GLTFLoader();
+
+//     loader.load(gltfUrl, (gltf) => {
+//       const colors = {};
+
+//       gltf.scene.traverse((child) => {
+//         if (child.material && child.material.name) {
+//           colors[child.material.name] = child.material.color.clone();
+//         }
+//       });
+
+//       setMaterialColors(colors);
+//       setLoading(false);
+//     });
+//   }, []);
+
+//   const handleColorChange = (materialName, newColor) => {
+//     if (!/^#[0-9A-F]{6}$/i.test(newColor)) {
+//       console.error('Invalid color format:', newColor);
+//       return;
+//     }
+//     const color = new Color(newColor);
+//     setMaterialColors(prevColors => ({
+//       ...prevColors,
+//       [materialName]: color,
+//     }));
+//   };
+
+//   return (
+//     <div>
+//       <Canvas>
+//         <color attach="background" args={["#101010"]} />
+//         <fog attach="fog" args={["#101010", 10, 20]} />
+//         <Experience materialColors={materialColors} />
+//       </Canvas>
+//       <h2>Material Colors</h2>
+//       {loading ? (
+//         <p>Loading...</p>
+//       ) : (
+//         <ul>
+//           {Object.entries(materialColors).map(([name, color], index) => (
+//             <li key={index}>
+//               <span>{name}</span>
+//               <input
+//                 type="color"
+//                 value={`#${color.getHexString()}`}
+//                 onChange={(e) => handleColorChange(name, e.target.value)} 
+//               />
+//             </li>
+//           ))}
+//         </ul>
+//       )}
+//     </div>
+//   );
+// };
+
+// export default GLTFObjectNames;
+
+// __________________________________________________________________________________________________________________________________________________________________________________________________________
+
+// import './index.css';
+// import {Suspense, useRef,useState} from 'react'
+// import { Canvas} from '@react-three/fiber'
+// import {OrbitControls, useGLTF} from '@react-three/drei'
+
+// function Model({ ...props }) {
+//   const group = useRef()
+//   const { nodes, materials } = useGLTF('/shoe.gltf')
+//   return (
+//     <group ref={group} {...props} dispose={null} scale={3}>
+//       <mesh geometry={nodes.shoe.geometry} material={materials.laces} material-color={props.customColors.setStripes}/>
+//       <mesh geometry={nodes.shoe_1.geometry} material={materials.mesh} material-color={props.customColors.mesh}/>
+//       <mesh geometry={nodes.shoe_2.geometry} material={materials.caps} material-color={props.customColors.soul}/>
+//       <mesh geometry={nodes.shoe_3.geometry} material={materials.inner}material-color={props.customColors.soul} />
+//       <mesh geometry={nodes.shoe_4.geometry} material={materials.sole} material-color={props.customColors.soul}/>
+//       <mesh geometry={nodes.shoe_5.geometry} material={materials.stripes}material-color={props.customColors.stripes} />
+//       <mesh geometry={nodes.shoe_6.geometry} material={materials.band} material-color={props.customColors.stripes}/>
+//       <mesh geometry={nodes.shoe_7.geometry} material={materials.patch} material-color={props.customColors.soul}/>
+//     </group>
+//   )
+// }
+
+
+// function App() {
+ 
+//   const [mesh,setMesh] = useState("#ffffff")
+//   const [stripes,setStripes] = useState("#ffffff")
+//   const [soul,setSoul] = useState("#ffffff")
+
+//   return (
+//     <div className="App">
+//         <div className="wrapper">
+//             <div className="card">
+//                 <div className="that stupid damn shoe"> This Stupid Shoe is Going to Make Me Do a Murder.com
+//                    <Canvas>
+//                       <Suspense fallback={null}>
+//                           <ambientLight />
+//                           <spotLight intensity={0.9} 
+//                                      angle={0.1} 
+//                                      penumbra={1} 
+//                                      position={[10,15,10]}
+//                                      castShadow />
+//                           <Model customColors={{mesh:mesh, stripes:stripes , soul:soul }}/>
+                          // <OrbitControls enablePan={true}
+                          //                enableZoom={true}
+                          //                enableRotate={true}/>
+//                       </Suspense>
+//                    </Canvas>
+//                 </div>
+//                 <h2>Color chooser</h2>
+//                 <div className='colors'>
+//                     <div>
+//                         <input type="color" id="mesh" name="mesh"
+//                               value={mesh} 
+//                               onChange={(e) => setMesh(e.target.value)}/>
+//                         <label for="mesh">Main</label>
+//                       </div>
+
+//                     <div>
+//                         <input type="color" id="stripes" name="stripes"
+//                                 value= {stripes}
+//                                 onChange={(e) => setStripes(e.target.value)}/>
+//                         <label for="stripes">Stripes</label>
+//                     </div>
+//                     <div>
+//                         <input type="color" id="soul" name="soul"
+//                                 value={soul} 
+//                                 onChange={(e) => setSoul(e.target.value)}/>
+//                         <label for="soul">Soul</label>
+//                     </div>
+//                 </div>
+//             </div>
+//         </div>
+//     </div>
+//   );
+// }
+
+// export default App;
+

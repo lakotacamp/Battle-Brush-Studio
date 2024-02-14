@@ -1,0 +1,61 @@
+// Better Optimization, far fewer crashes
+
+import React, { Suspense, useState, useRef } from 'react';
+import { Stage, OrbitControls } from "@react-three/drei";
+import { Canvas } from '@react-three/fiber';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import { useLoader } from '@react-three/fiber';
+
+const Model = () => {
+  const gltf = useLoader(GLTFLoader, './public/scene.gltf');
+  const [materialColors, setMaterialColors] = useState({});
+  const meshRefs = useRef({});
+
+  const handleColorChange = (materialName, color) => {
+    setMaterialColors({ ...materialColors, [materialName]: color });
+
+    if (meshRefs.current[materialName]) {
+      meshRefs.current[materialName].material.color.set(color);
+    }
+  };
+
+  gltf.scene.traverse((child) => {
+    if (child.isMesh && child.material.name) {
+      if (!(child.material.name in materialColors)) {
+        setMaterialColors((prevColors) => ({
+          ...prevColors,
+          [child.material.name]: '#ff0000',
+        }));
+      }
+      meshRefs.current[child.material.name] = child;
+    }
+  });
+
+  return (
+    <>
+      <Canvas style={{ width: '600px', height: '600px' }}>
+      <Stage environment={"city"} intensity={1} contactShadow={false} shadowBias={-0.0015}>
+        <Suspense fallback={null}>
+          <primitive object={gltf.scene} />
+        </Suspense>
+        </Stage>
+        <OrbitControls enablePan={true} enableZoom={true} enableRotate={true}/>
+      </Canvas>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '10px', maxHeight: '600px', overflowY: 'auto' }}>
+        {Object.entries(materialColors).map(([materialName, color]) => (
+          <div key={materialName}>
+            <label htmlFor={materialName}>{materialName}:</label>
+            <input
+              id={materialName}
+              type="color"
+              value={color}
+              onChange={(event) => handleColorChange(materialName, event.target.value)}
+            />
+          </div>
+        ))}
+      </div>
+    </>
+  );
+};
+
+export default Model;
